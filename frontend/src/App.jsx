@@ -294,9 +294,7 @@ export default function App() {
               <div>
                 <p className="eyebrow">Admissions management</p>
                 <h1>Applications</h1>
-                <p className="dashboard-description">
-                  Active seat holds and confirmed admissions, organized by class.
-                </p>
+                
               </div>
               <div className="live-indicator">
                 <span aria-hidden="true" />
