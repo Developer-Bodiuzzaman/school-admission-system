@@ -294,7 +294,6 @@ export default function App() {
               <div>
                 <p className="eyebrow">Admissions management</p>
                 <h1>Applications</h1>
-                
               </div>
               <div className="live-indicator">
                 <span aria-hidden="true" />
@@ -368,7 +367,6 @@ export default function App() {
                 <div className="dashboard-empty">
                   <span className="empty-icon" aria-hidden="true">▤</span>
                   <h3>No active applications</h3>
-                  <p>Active holds and confirmed admissions will appear here by class.</p>
                 </div>
               ) : (
                 <div className="class-groups">
@@ -436,7 +434,6 @@ export default function App() {
             <section className="student-hero">
               <p className="eyebrow">Welcome</p>
               <h1>Find your next class.</h1>
-              <p>Enter your Birth Registration ID to apply and track your admission.</p>
             </section>
 
             {error && <div className="student-alert student-alert-error" role="alert">{error}</div>}
@@ -453,7 +450,6 @@ export default function App() {
                 placeholder="Enter your 17-digit ID"
                 value={studentId}
               />
-              <p>Enter all 17 digits to apply and view your applications.</p>
             </section>
 
             <section className="student-section" aria-labelledby="available-classes-title">
@@ -511,7 +507,7 @@ export default function App() {
                 </div>
               </div>
               {!/^\d{17}$/.test(studentId) ? (
-                <div className="student-empty">Enter your 17-digit ID above to view your applications.</div>
+                <div className="student-empty">Your applications will appear here.</div>
               ) : (
                 <div className="table-scroll student-table-wrap">
                   <table className="applications-table">

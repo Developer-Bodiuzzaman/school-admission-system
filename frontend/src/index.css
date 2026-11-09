@@ -14,11 +14,11 @@
 
   --navy: #17243b;
   --muted: #718096;
-  --border: #e5eaf2;
-  --blue: #4263df;
-  --blue-dark: #3150c5;
+  --border: #e3e9f2;
+  --blue: #4168e8;
+  --blue-dark: #3155cf;
   --surface: #fff;
-  --background: #f5f7fb;
+  --background: #f4f7fc;
 }
 
 * {
@@ -29,7 +29,10 @@ body {
   min-width: 360px;
   min-height: 100vh;
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgb(222 231 255 / 54%), transparent 29rem),
+    radial-gradient(ellipse at 95% 14%, rgb(227 244 247 / 56%), transparent 26rem),
+    var(--background);
 }
 
 button,
@@ -57,12 +60,12 @@ button:disabled {
 
 .student-topbar,
 .admin-topbar {
-  min-height: 82px;
+  min-height: 78px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgb(222 229 240 / 85%);
 }
 
 .brand-lockup {
@@ -80,13 +83,13 @@ button:disabled {
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 13px;
   color: #fff;
-  background: linear-gradient(145deg, #5877f2, #3756d5);
+  background: linear-gradient(145deg, #6685ff, #3659d8);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.04em;
-  box-shadow: 0 5px 12px rgb(61 91 218 / 20%);
+  box-shadow: 0 7px 16px rgb(61 91 218 / 24%);
 }
 
 .brand-copy {
@@ -119,14 +122,15 @@ button:disabled {
 }
 
 .admin-login-button {
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid #dce3f0;
-  border-radius: 9px;
-  color: #34425b;
-  background: #fff;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid #d8e1f1;
+  border-radius: 10px;
+  color: #32425f;
+  background: rgb(255 255 255 / 85%);
   font-size: 13px;
   font-weight: 650;
+  box-shadow: 0 3px 10px rgb(29 50 91 / 5%);
 }
 
 .admin-login-button:hover,
@@ -137,11 +141,33 @@ button:disabled {
 }
 
 .student-content {
-  padding: 48px 0 70px;
+  padding: 42px 0 76px;
 }
 
 .student-hero {
-  padding: 28px 0 30px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 22px;
+  padding: 35px 38px;
+  border: 1px solid #dce5fc;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 22%, rgb(255 255 255 / 75%) 0 4.5rem, transparent 4.6rem),
+    radial-gradient(circle at 93% 83%, rgb(206 220 255 / 70%) 0 8rem, transparent 8.1rem),
+    linear-gradient(112deg, #edf2ff 0%, #f5f7ff 55%, #e8f4fa 100%);
+  box-shadow: 0 10px 28px rgb(39 63 116 / 6%);
+}
+
+.student-hero::after {
+  position: absolute;
+  right: 6.5rem;
+  bottom: -3.4rem;
+  width: 7rem;
+  height: 7rem;
+  border: 1px solid rgb(91 120 222 / 13%);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -157,7 +183,7 @@ button:disabled {
 .dashboard-heading h1 {
   margin: 0;
   color: var(--navy);
-  font-size: clamp(30px, 4vw, 42px);
+  font-size: clamp(32px, 4vw, 44px);
   font-weight: 740;
   letter-spacing: -0.045em;
   line-height: 1.15;
@@ -174,11 +200,11 @@ button:disabled {
   grid-template-columns: minmax(180px, 0.85fr) minmax(240px, 1.4fr);
   align-items: center;
   gap: 8px 24px;
-  padding: 22px 24px;
-  border: 1px solid var(--border);
-  border-radius: 13px;
+  padding: 22px 25px;
+  border: 1px solid #e1e7f0;
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 3px 12px rgb(28 43 70 / 3%);
+  box-shadow: 0 5px 18px rgb(28 43 70 / 4%);
 }
 
 .student-id-panel label {
@@ -190,13 +216,14 @@ button:disabled {
 .student-id-panel input,
 .admin-login-form input {
   width: 100%;
-  min-height: 44px;
-  padding: 0 13px;
-  border: 1px solid #dce3ed;
-  border-radius: 8px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #d9e1ec;
+  border-radius: 9px;
   outline: none;
   color: var(--navy);
   background: #fff;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .student-id-panel input:focus,
@@ -212,7 +239,7 @@ button:disabled {
 }
 
 .student-section {
-  margin-top: 38px;
+  margin-top: 42px;
 }
 
 .student-section-heading {
@@ -229,7 +256,7 @@ button:disabled {
 .student-section h2 {
   margin: 0;
   color: var(--navy);
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -242,10 +269,10 @@ button:disabled {
 .student-table-wrap,
 .class-card {
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid #e2e8f1;
+  border-radius: 14px;
   background: #fff;
-  box-shadow: 0 3px 12px rgb(28 43 70 / 3%);
+  box-shadow: 0 5px 18px rgb(28 43 70 / 4%);
 }
 
 .applications-table {
@@ -255,10 +282,10 @@ button:disabled {
 }
 
 .applications-table th {
-  padding: 13px 18px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
-  color: #718096;
-  background: #f8f9fc;
+  color: #67758d;
+  background: #f7f9fd;
   font-size: 11px;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -267,11 +294,16 @@ button:disabled {
 }
 
 .applications-table td {
-  padding: 15px 18px;
+  padding: 16px 18px;
   border-bottom: 1px solid #edf0f5;
   color: #536178;
   font-size: 13px;
   white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.applications-table tbody tr:hover td {
+  background: #fafbff;
 }
 
 .applications-table tbody tr:last-child td {
@@ -291,20 +323,22 @@ button:disabled {
 
 .apply-button,
 .confirm-button {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid #d9e1ff;
-  border-radius: 7px;
-  color: #3453ce;
-  background: #f0f3ff;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #d7e0ff;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, #4f70eb, #3e5fd8);
   font-size: 12px;
   font-weight: 650;
+  box-shadow: 0 3px 8px rgb(62 95 216 / 15%);
 }
 
 .apply-button:hover:not(:disabled),
 .confirm-button:hover {
-  border-color: #cbd5ff;
-  background: #e4eaff;
+  border-color: #3654cb;
+  background: linear-gradient(135deg, #4566e0, #3453cb);
+  box-shadow: 0 5px 12px rgb(62 95 216 / 22%);
 }
 
 .apply-button:disabled {
@@ -314,11 +348,11 @@ button:disabled {
 }
 
 .student-empty {
-  padding: 20px;
-  border: 1px dashed #d9e0eb;
-  border-radius: 10px;
+  padding: 22px;
+  border: 1px dashed #d5deeb;
+  border-radius: 12px;
   color: #8490a2;
-  background: #fafbfd;
+  background: rgb(255 255 255 / 76%);
   font-size: 13px;
 }
 
@@ -344,10 +378,11 @@ button:disabled {
 
 .student-alert {
   margin: 0 0 15px;
-  padding: 12px 15px;
+  padding: 13px 16px;
   border: 1px solid;
-  border-radius: 9px;
+  border-radius: 10px;
   font-size: 13px;
+  box-shadow: 0 4px 12px rgb(28 43 70 / 4%);
 }
 
 .student-alert-error {
@@ -414,7 +449,7 @@ button:disabled {
 }
 
 .admin-dashboard {
-  padding: 38px 0 64px;
+  padding: 42px 0 72px;
 }
 
 .dashboard-heading {
@@ -465,14 +500,20 @@ button:disabled {
 
 .summary-card {
   display: flex;
-  min-height: 104px;
+  min-height: 112px;
   align-items: center;
   gap: 15px;
-  padding: 18px 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  padding: 20px 22px;
+  border: 1px solid #e2e8f1;
+  border-radius: 14px;
   background: #fff;
-  box-shadow: 0 3px 12px rgb(28 43 70 / 3%);
+  box-shadow: 0 5px 18px rgb(28 43 70 / 4%);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgb(28 43 70 / 7%);
 }
 
 .summary-icon {
@@ -553,17 +594,18 @@ button:disabled {
 
 .class-groups {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .class-card-header {
   display: flex;
-  min-height: 68px;
+  min-height: 72px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 18px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, #fff, #fbfcff);
 }
 
 .class-card-label {
@@ -602,7 +644,7 @@ button:disabled {
 
 .status-badge {
   display: inline-flex;
-  min-height: 25px;
+  min-height: 27px;
   align-items: center;
   gap: 6px;
   padding: 2px 9px;
@@ -642,12 +684,12 @@ button:disabled {
 
 .dashboard-empty {
   display: grid;
-  min-height: 220px;
+  min-height: 240px;
   justify-items: center;
   align-content: center;
   padding: 28px;
   border: 1px dashed #dbe2ed;
-  border-radius: 12px;
+  border-radius: 14px;
   color: #8591a4;
   background: rgb(255 255 255 / 65%);
   text-align: center;
@@ -715,12 +757,12 @@ button:disabled {
 }
 
 .admin-modal {
-  width: min(100%, 430px);
-  padding: 28px;
+  width: min(100%, 440px);
+  padding: 30px;
   border: 1px solid rgb(255 255 255 / 80%);
-  border-radius: 16px;
+  border-radius: 18px;
   background: #fff;
-  box-shadow: 0 24px 75px rgb(14 25 48 / 25%);
+  box-shadow: 0 28px 90px rgb(14 25 48 / 30%);
   animation: modal-enter 0.18s ease-out;
 }
 
@@ -791,7 +833,7 @@ button:disabled {
 }
 
 .sign-in-button {
-  min-height: 44px;
+  min-height: 46px;
   margin-top: 8px;
   border: 1px solid var(--blue);
   border-radius: 8px;
@@ -831,6 +873,13 @@ button:disabled {
   border-top-color: #4e69dc;
   border-radius: 50%;
   animation: spinner 0.7s linear infinite;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgb(66 99 223 / 35%);
+  outline-offset: 3px;
 }
 
 .visually-hidden {
@@ -950,11 +999,12 @@ button:disabled {
   }
 
   .student-hero {
-    padding: 23px 0;
+    padding: 28px 25px;
+    border-radius: 15px;
   }
 
   .student-hero h1 {
-    font-size: 32px;
+    font-size: 34px;
   }
 
   .student-hero > p:last-child {
@@ -988,6 +1038,10 @@ button:disabled {
     padding: 12px;
   }
 
+  .student-section {
+    margin-top: 32px;
+  }
+
   .class-card-header {
     min-height: 62px;
     padding: 12px;
@@ -996,6 +1050,10 @@ button:disabled {
   .admin-modal {
     padding: 23px;
     border-radius: 14px;
+  }
+
+  .admin-dashboard {
+    padding-top: 27px;
   }
 }
 
