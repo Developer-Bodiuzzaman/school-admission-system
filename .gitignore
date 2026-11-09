@@ -1,0 +1,15 @@
+# .NET
+**/bin/
+**/obj/
+
+# Node
+**/node_modules/
+**/dist/
+npm-debug.log*
+
+# Local environment and IDE files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
