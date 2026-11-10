@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,10 +36,10 @@ if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPass
     throw new InvalidOperationException("The Admin:Email and Admin:Password configuration values are required.");
 }
 
-var holdTimeoutMinutes = builder.Configuration.GetValue<int>("HoldTimeoutMinutes", 10);
-if (holdTimeoutMinutes <= 0)
+var holdDurationSeconds = builder.Configuration.GetValue<int>("HOLD_DURATION_SECONDS", 600);
+if (holdDurationSeconds <= 0)
 {
-    throw new InvalidOperationException("HoldTimeoutMinutes must be greater than zero.");
+    throw new InvalidOperationException("HOLD_DURATION_SECONDS must be greater than zero.");
 }
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(connectionString));
@@ -210,6 +212,42 @@ app.MapGet("/classes", async (NpgsqlDataSource dataSource, CancellationToken can
     return Results.Ok(classes);
 });
 
+app.MapGet("/classes/{classId:int}", async (
+    int classId,
+    NpgsqlDataSource dataSource,
+    CancellationToken cancellationToken) =>
+{
+    await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+    await using var command = new NpgsqlCommand(
+        """
+        SELECT c.id, c.name, c.total_seats,
+            COUNT(h.id) FILTER (WHERE h.status = 'HELD' AND h.expires_at > now())::integer AS held_seats,
+            COUNT(h.id) FILTER (WHERE h.status = 'CONFIRMED')::integer AS confirmed_seats
+        FROM classes c
+        LEFT JOIN holds h ON h.class_id = c.id
+        WHERE c.id = @classId
+        GROUP BY c.id
+        """,
+        connection);
+    command.Parameters.AddWithValue("classId", classId);
+    await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+    if (!await reader.ReadAsync(cancellationToken))
+    {
+        return Results.NotFound(new { message = "Class not found." });
+    }
+
+    var totalSeats = reader.GetInt32(2);
+    var heldSeats = reader.GetInt32(3);
+    var confirmedSeats = reader.GetInt32(4);
+    return Results.Ok(new ClassSummary(
+        reader.GetInt32(0),
+        reader.GetString(1),
+        totalSeats,
+        heldSeats,
+        confirmedSeats,
+        Math.Max(0, totalSeats - heldSeats - confirmedSeats)));
+});
+
 app.MapPost("/classes", async (
     CreateClassRequest request,
     NpgsqlDataSource dataSource,
@@ -226,30 +264,40 @@ app.MapPost("/classes", async (
         """
         INSERT INTO classes (name, total_seats)
         VALUES (@name, @totalSeats)
-        ON CONFLICT (name) DO UPDATE SET total_seats = EXCLUDED.total_seats
+        ON CONFLICT (name) DO NOTHING
         RETURNING id
         """,
         connection);
     command.Parameters.AddWithValue("name", name);
     command.Parameters.AddWithValue("totalSeats", request.TotalSeats);
 
-    var id = (int)(await command.ExecuteScalarAsync(cancellationToken)
-        ?? throw new InvalidOperationException("The class insert did not return an ID."));
+    var idValue = await command.ExecuteScalarAsync(cancellationToken);
+    if (idValue is null)
+    {
+        return Results.Conflict(new { message = "A class with this name already exists." });
+    }
 
-    return Results.Ok(new ClassSummary(id, name, request.TotalSeats, 0, 0, request.TotalSeats));
+    var id = (int)idValue;
+    return Results.Created(
+        $"/classes/{id}",
+        new ClassSummary(id, name, request.TotalSeats, 0, 0, request.TotalSeats));
 })
     .RequireAuthorization();
 
 app.MapPost("/classes/{classId:int}/holds", async (
     int classId,
-    CreateHoldRequest request,
+    HttpContext context,
+    [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CreateHoldRequest? request,
     NpgsqlDataSource dataSource,
     CancellationToken cancellationToken) =>
 {
-    var studentId = request.StudentBirthRegistrationId;
-    if (studentId is null || studentId.Length != 17 || !studentId.All(char.IsDigit))
+    var requestedStudentId = request?.StudentBirthRegistrationId;
+    var studentId = IsValidStudentId(requestedStudentId)
+        ? requestedStudentId
+        : GetStudentId(context);
+    if (studentId is null)
     {
-        return Results.BadRequest(new { message = "A valid 17-digit studentBirthRegistrationId is required." });
+        return Results.BadRequest(new { message = "A valid 17-digit studentBirthRegistrationId or X-Student-Id header is required." });
     }
 
     await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -306,7 +354,7 @@ app.MapPost("/classes/{classId:int}/holds", async (
                 return Results.Conflict(new { message = "You already have a confirmed seat in this class." });
             }
 
-            return Results.Ok(new HoldSummary(existingId, classId, null, existingStatus, existingExpiry));
+            return Results.Ok(new HoldCreateSummary(existingId, classId, studentId, existingStatus, existingExpiry));
         }
     }
 
@@ -332,14 +380,14 @@ app.MapPost("/classes/{classId:int}/holds", async (
     await using var insertCommand = new NpgsqlCommand(
         """
         INSERT INTO holds (class_id, student_id, status, expires_at)
-        VALUES (@classId, @studentId, 'HELD', now() + make_interval(mins => @holdTimeoutMinutes))
+        VALUES (@classId, @studentId, 'HELD', now() + make_interval(secs => @holdDurationSeconds))
         RETURNING id, expires_at
         """,
         connection,
         transaction);
     insertCommand.Parameters.AddWithValue("classId", classId);
     insertCommand.Parameters.AddWithValue("studentId", studentId);
-    insertCommand.Parameters.AddWithValue("holdTimeoutMinutes", holdTimeoutMinutes);
+    insertCommand.Parameters.AddWithValue("holdDurationSeconds", holdDurationSeconds);
     await using var insertReader = await insertCommand.ExecuteReaderAsync(cancellationToken);
     await insertReader.ReadAsync(cancellationToken);
     var holdId = insertReader.GetInt64(0);
@@ -347,7 +395,46 @@ app.MapPost("/classes/{classId:int}/holds", async (
     await insertReader.CloseAsync();
     await transaction.CommitAsync(cancellationToken);
 
-    return Results.Ok(new HoldSummary(holdId, classId, null, "HELD", expiresAt));
+    return Results.Created(
+        $"/holds/{holdId}",
+        new HoldCreateSummary(holdId, classId, studentId, "HELD", expiresAt));
+});
+
+app.MapGet("/holds/{holdId:long}", async (
+    long holdId,
+    HttpContext context,
+    NpgsqlDataSource dataSource,
+    CancellationToken cancellationToken) =>
+{
+    var studentId = GetStudentId(context);
+    if (studentId is null)
+    {
+        return Results.BadRequest(new { message = "A valid 17-digit X-Student-Id header is required." });
+    }
+
+    await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+    await using var command = new NpgsqlCommand(
+        """
+        SELECT class_id,
+            CASE WHEN status = 'HELD' AND expires_at <= now() THEN 'EXPIRED' ELSE status END,
+            expires_at
+        FROM holds
+        WHERE id = @holdId AND student_id = @studentId
+        """,
+        connection);
+    command.Parameters.AddWithValue("holdId", holdId);
+    command.Parameters.AddWithValue("studentId", studentId);
+    await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+    if (!await reader.ReadAsync(cancellationToken))
+    {
+        return Results.NotFound(new { message = "Application not found." });
+    }
+
+    return Results.Ok(new HoldDetailsSummary(
+        holdId,
+        reader.GetInt32(0),
+        reader.GetString(1),
+        reader.GetDateTime(2)));
 });
 
 app.MapGet("/me/holds", async (
@@ -365,7 +452,7 @@ app.MapGet("/me/holds", async (
     await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
     await using var command = new NpgsqlCommand(
         """
-        SELECT h.id, c.name,
+        SELECT h.id, h.class_id, c.name,
             CASE WHEN h.status = 'HELD' AND h.expires_at <= now() THEN 'EXPIRED' ELSE h.status END,
             h.expires_at
         FROM holds h
@@ -380,9 +467,10 @@ app.MapGet("/me/holds", async (
     {
         holds.Add(new StudentHoldSummary(
             reader.GetInt64(0),
-            reader.GetString(1),
+            reader.GetInt32(1),
             reader.GetString(2),
-            reader.GetDateTime(3)));
+            reader.GetString(3),
+            reader.GetDateTime(4)));
     }
 
     return Results.Ok(holds);
@@ -459,7 +547,8 @@ app.MapDelete("/holds/{holdId:long}", async (
     await using var command = new NpgsqlCommand(
         """
         UPDATE holds SET status = 'CANCELLED'
-        WHERE id = @holdId AND student_id = @studentId AND status = 'HELD'
+        WHERE id = @holdId AND student_id = @studentId
+            AND status = 'HELD' AND expires_at > now()
         RETURNING id
         """,
         connection);
@@ -468,7 +557,7 @@ app.MapDelete("/holds/{holdId:long}", async (
     var cancelledId = await command.ExecuteScalarAsync(cancellationToken);
     return cancelledId is null
         ? Results.Conflict(new { message = "This application is no longer an active seat hold." })
-        : Results.Ok(new { holdId = (long)cancelledId, status = "CANCELLED" });
+        : Results.NoContent();
 });
 
 app.Run();
@@ -508,8 +597,11 @@ static async Task<List<AdminApplicationSummary>> LoadAdminApplicationsAsync(
 static string? GetStudentId(HttpContext context)
 {
     var studentId = context.Request.Headers["X-Student-Id"].ToString();
-    return studentId.Length == 17 && studentId.All(char.IsDigit) ? studentId : null;
+    return IsValidStudentId(studentId) ? studentId : null;
 }
+
+static bool IsValidStudentId(string? studentId) =>
+    studentId is { Length: 17 } && studentId.All(char.IsDigit);
 
 static bool FixedTimeEqualsText(string providedValue, string configuredValue)
 {
@@ -523,6 +615,10 @@ record CreateClassRequest(string? Name, int TotalSeats);
 
 record CreateHoldRequest(string? StudentBirthRegistrationId);
 
+record HoldCreateSummary(long HoldId, int ClassId, string StudentId, string Status, DateTime ExpiresAt);
+
+record HoldDetailsSummary(long HoldId, int ClassId, string Status, DateTime ExpiresAt);
+
 record AdminLoginRequest(string? Email, string? Password);
 
 record ClassSummary(
@@ -533,9 +629,7 @@ record ClassSummary(
     int ConfirmedSeats,
     int AvailableSeats);
 
-record HoldSummary(long HoldId, int ClassId, string? ClassName, string Status, DateTime ExpiresAt);
-
-record StudentHoldSummary(long HoldId, string ClassName, string Status, DateTime ExpiresAt);
+record StudentHoldSummary(long HoldId, int ClassId, string ClassName, string Status, DateTime ExpiresAt);
 
 record AdminApplicationSummary(
     long HoldId,
@@ -544,3 +638,5 @@ record AdminApplicationSummary(
     string StudentId,
     string Status,
     DateTime ExpiresAt);
+
+public partial class Program { }

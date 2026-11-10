@@ -237,6 +237,72 @@ button:disabled {
   margin-top: 42px;
 }
 
+.class-setup-section {
+  margin-top: 27px;
+  padding: 24px;
+}
+
+.class-setup-heading {
+  margin-bottom: 18px;
+}
+
+.class-setup-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.class-setup-heading h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.class-create-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.35fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.class-create-form > div {
+  display: grid;
+  gap: 7px;
+}
+
+.class-create-form label {
+  color: #34425a;
+  font-size: 12px;
+  font-weight: 660;
+}
+
+.class-create-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d9e1ec;
+  border-radius: 9px;
+  outline: none;
+  color: var(--navy);
+  background: #fff;
+}
+
+.class-create-form input:focus {
+  border-color: #6380ef;
+  box-shadow: 0 0 0 3px rgb(66 99 223 / 12%);
+}
+
+.class-create-form .sign-in-button {
+  min-width: 130px;
+  min-height: 44px;
+  margin-top: 0;
+}
+
+.class-create-success {
+  margin: 0 0 15px;
+  color: #28774d;
+  font-size: 13px;
+}
+
 .student-section-heading {
   display: flex;
   align-items: end;
@@ -672,6 +738,15 @@ button:disabled {
   background: #dfa439;
 }
 
+.status-expired {
+  color: #68758a;
+  background: #f0f2f5;
+}
+
+.status-expired > span {
+  background: #9aa4b2;
+}
+
 .expiry-cell {
   color: #77849a !important;
   font-size: 12px !important;
@@ -926,6 +1001,14 @@ input:focus-visible {
     grid-template-columns: 1fr;
     gap: 10px;
     margin-top: 21px;
+  }
+
+  .class-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .class-create-form .sign-in-button {
+    width: 100%;
   }
 
   .summary-card {

@@ -1,58 +1,10 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: admission_postgres
-    environment:
-      POSTGRES_DB: admission_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d admission_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: admission_backend
-    ports:
-      - "8080:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=admission_db;Username=postgres;Password=postgrespassword
-      - HOLD_DURATION_SECONDS=600
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: admission_frontend
-    ports:
-      - "3000:80"
-    environment:
-      - VITE_BACKEND_URL=http://localhost:8080
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-appdb}
       POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-password}
     ports:
       - "5432:5432"
     volumes:
@@ -70,10 +22,11 @@ volumes:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-appdb};Username=${POSTGRES_USER:-app};Password=${POSTGRES_PASSWORD:-local-dev-password}
-      Admin__ApiKey: ${ADMIN_API_KEY:?Set ADMIN_API_KEY in your local .env file}
-      Admin__Email: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in your local .env file}
-      Admin__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in your local .env file}
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-appdb};Username=${POSTGRES_USER:-app};Password=${POSTGRES_PASSWORD:-local-development-password}
+      Admin__ApiKey: ${ADMIN_API_KEY:-local-development-api-key}
+      Admin__Email: ${ADMIN_EMAIL:-admin@example.com}
+      Admin__Password: ${ADMIN_PASSWORD:-local-development-password}
+      HOLD_DURATION_SECONDS: ${HOLD_DURATION_SECONDS:-600}
     ports:
       - "8080:8080"
     depends_on:
@@ -83,6 +36,8 @@ volumes:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     ports:
       - "5173:80"
     depends_on:

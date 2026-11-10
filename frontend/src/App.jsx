@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const STUDENT_ID_STORAGE_KEY = 'schoolAdmission.studentId';
-const ADMIN_EMAIL = 'adminpanel@gmail.com';
 
 function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(value));
+}
+
+function formatTimeRemaining(value, now) {
+  const remainingSeconds = Math.max(0, Math.ceil((new Date(value).getTime() - now) / 1000));
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 }
 
 export default function App() {
@@ -27,12 +33,18 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [adminError, setAdminError] = useState('');
-  const [loginEmail, setLoginEmail] = useState(ADMIN_EMAIL);
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassSeats, setNewClassSeats] = useState('');
+  const [classCreateError, setClassCreateError] = useState('');
+  const [classCreateSuccess, setClassCreateSuccess] = useState('');
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isCheckingAdminSession, setIsCheckingAdminSession] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [holdClock, setHoldClock] = useState(() => Date.now());
 
   useEffect(() => {
     if (/^\d{17}$/.test(studentId)) {
@@ -40,6 +52,13 @@ export default function App() {
     } else {
       window.localStorage.removeItem(STUDENT_ID_STORAGE_KEY);
     }
+  }, [studentId]);
+
+  useEffect(() => {
+    if (!/^\d{17}$/.test(studentId)) return undefined;
+
+    const intervalId = window.setInterval(() => setHoldClock(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
   }, [studentId]);
 
   const fetchClasses = useCallback(async () => {
@@ -172,6 +191,28 @@ export default function App() {
         : 'Could not log in. Check that the backend is running and try again.');
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleCreateClass = async (event) => {
+    event.preventDefault();
+    setClassCreateError('');
+    setClassCreateSuccess('');
+    setIsCreatingClass(true);
+
+    try {
+      const { data } = await axios.post(
+        `${API_BASE}/classes`,
+        { name: newClassName.trim(), totalSeats: Number(newClassSeats) },
+        { withCredentials: true }
+      );
+      setClassCreateSuccess(`${data.name} was created successfully.`);
+      setNewClassName('');
+      setNewClassSeats('');
+    } catch (requestError) {
+      setClassCreateError(requestError.response?.data?.message || 'Could not create the class. Please try again.');
+    } finally {
+      setIsCreatingClass(false);
     }
   };
 
@@ -323,6 +364,45 @@ export default function App() {
                   <strong>{classGroups.length}</strong>
                 </div>
               </article>
+            </section>
+
+            <section className="class-setup-section class-card" aria-labelledby="create-class-title">
+              <div className="class-setup-heading">
+                <div>
+                  <p className="eyebrow">Class setup</p>
+                  <h2 id="create-class-title">Create a class</h2>
+                </div>
+              </div>
+              {classCreateError && <p className="admin-form-error" role="alert">{classCreateError}</p>}
+              {classCreateSuccess && <p className="class-create-success" role="status">{classCreateSuccess}</p>}
+              <form className="class-create-form" onSubmit={handleCreateClass}>
+                <div>
+                  <label htmlFor="new-class-name">Class name</label>
+                  <input
+                    id="new-class-name"
+                    maxLength={100}
+                    onChange={event => setNewClassName(event.target.value)}
+                    placeholder="e.g. Class 6 - Morning Shift"
+                    required
+                    value={newClassName}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="new-class-seats">Total seats</label>
+                  <input
+                    id="new-class-seats"
+                    min="0"
+                    onChange={event => setNewClassSeats(event.target.value)}
+                    required
+                    step="1"
+                    type="number"
+                    value={newClassSeats}
+                  />
+                </div>
+                <button className="sign-in-button" disabled={isCreatingClass} type="submit">
+                  {isCreatingClass ? 'Creating…' : 'Create class'}
+                </button>
+              </form>
             </section>
 
             <section className="applications-section" aria-labelledby="applications-title">
@@ -516,14 +596,20 @@ export default function App() {
                     </thead>
                     <tbody>
                       {myHolds.map(hold => {
-                        const expired = new Date() > new Date(hold.expiresAt);
-                        const status = expired && hold.status === 'HELD' ? 'EXPIRED' : hold.status;
+                        const expired = hold.status === 'EXPIRED'
+                          || (hold.status === 'HELD' && holdClock >= new Date(hold.expiresAt).getTime());
+                        const status = expired ? 'EXPIRED' : hold.status;
 
                         return (
                           <tr key={hold.holdId}>
                             <td className="class-name-cell">{hold.className}</td>
-                            <td>{status}</td>
-                            <td>{hold.status === 'HELD' ? formatDate(hold.expiresAt) : '—'}</td>
+                            <td>
+                              <span className={`status-badge status-${status.toLowerCase()}`}>
+                                <span aria-hidden="true" />
+                                {status === 'CONFIRMED' ? 'Confirmed' : status === 'EXPIRED' ? 'Expired' : 'Held'}
+                              </span>
+                            </td>
+                            <td>{status === 'HELD' ? formatTimeRemaining(hold.expiresAt, holdClock) : '—'}</td>
                             <td className="student-row-actions">
                               {status === 'HELD' && !expired && (
                                 <>
