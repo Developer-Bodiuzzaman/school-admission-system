@@ -431,11 +431,6 @@ export default function App() {
           </header>
 
           <main className="student-content">
-            <section className="student-hero">
-              <p className="eyebrow">Welcome</p>
-              <h1>Find your next class.</h1>
-            </section>
-
             {error && <div className="student-alert student-alert-error" role="alert">{error}</div>}
             {success && <div className="student-alert student-alert-success" role="status">{success}</div>}
 

@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   color: #17243b;
@@ -144,13 +146,10 @@ button:disabled {
   padding: 42px 0 76px;
 }
 
-.student-hero {
+.student-id-panel {
   position: relative;
   overflow: hidden;
-  margin-bottom: 22px;
-  padding: 35px 38px;
   border: 1px solid #dce5fc;
-  border-radius: 18px;
   background:
     radial-gradient(circle at 88% 22%, rgb(255 255 255 / 75%) 0 4.5rem, transparent 4.6rem),
     radial-gradient(circle at 93% 83%, rgb(206 220 255 / 70%) 0 8rem, transparent 8.1rem),
@@ -158,8 +157,9 @@ button:disabled {
   box-shadow: 0 10px 28px rgb(39 63 116 / 6%);
 }
 
-.student-hero::after {
+.student-id-panel::after {
   position: absolute;
+  z-index: 0;
   right: 6.5rem;
   bottom: -3.4rem;
   width: 7rem;
@@ -168,6 +168,12 @@ button:disabled {
   border-radius: 50%;
   content: "";
   pointer-events: none;
+}
+
+.student-id-panel label,
+.student-id-panel input {
+  position: relative;
+  z-index: 1;
 }
 
 .eyebrow {
@@ -179,7 +185,6 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.student-hero h1,
 .dashboard-heading h1 {
   margin: 0;
   color: var(--navy);
@@ -189,22 +194,12 @@ button:disabled {
   line-height: 1.15;
 }
 
-.student-hero > p:last-child {
-  margin-top: 12px;
-  color: var(--muted);
-  font-size: 16px;
-}
-
 .student-id-panel {
   display: grid;
   grid-template-columns: minmax(180px, 0.85fr) minmax(240px, 1.4fr);
   align-items: center;
   gap: 8px 24px;
-  padding: 22px 25px;
-  border: 1px solid #e1e7f0;
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 5px 18px rgb(28 43 70 / 4%);
+  padding: 26px 30px;
 }
 
 .student-id-panel label {
@@ -998,17 +993,8 @@ input:focus-visible {
     padding: 0 10px;
   }
 
-  .student-hero {
-    padding: 28px 25px;
-    border-radius: 15px;
-  }
-
-  .student-hero h1 {
-    font-size: 34px;
-  }
-
-  .student-hero > p:last-child {
-    font-size: 14px;
+  .student-id-panel {
+    padding: 22px 20px;
   }
 
   .admin-dashboard {
@@ -1066,4 +1052,49 @@ input:focus-visible {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.student-id-panel {
+  @apply rounded-2xl shadow-md;
+}
+
+.student-table-wrap,
+.class-card {
+  @apply rounded-xl border-slate-200 bg-white shadow-md transition duration-200;
+}
+
+.class-card:hover {
+  @apply -translate-y-0.5 shadow-lg;
+}
+
+.summary-card {
+  @apply rounded-2xl border-slate-200 bg-white p-6 shadow-md transition duration-200;
+}
+
+.summary-card:hover {
+  @apply -translate-y-0.5 shadow-lg;
+}
+
+.admin-modal {
+  @apply rounded-2xl p-8 shadow-2xl;
+}
+
+.admin-login-button,
+.logout-button,
+.refresh-button,
+.apply-button,
+.confirm-button,
+.cancel-application-button,
+.sign-in-button {
+  @apply transition duration-200 ease-out;
+}
+
+.admin-login-button:hover,
+.logout-button:hover,
+.refresh-button:hover,
+.apply-button:hover:not(:disabled),
+.confirm-button:hover,
+.cancel-application-button:hover,
+.sign-in-button:hover:not(:disabled) {
+  @apply -translate-y-px shadow-md;
 }
