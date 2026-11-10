@@ -242,14 +242,14 @@ app.MapPost("/classes", async (
 
 app.MapPost("/classes/{classId:int}/holds", async (
     int classId,
-    HttpContext context,
+    CreateHoldRequest request,
     NpgsqlDataSource dataSource,
     CancellationToken cancellationToken) =>
 {
-    var studentId = GetStudentId(context);
-    if (studentId is null)
+    var studentId = request.StudentBirthRegistrationId;
+    if (studentId is null || studentId.Length != 17 || !studentId.All(char.IsDigit))
     {
-        return Results.BadRequest(new { message = "A valid 17-digit X-Student-Id header is required." });
+        return Results.BadRequest(new { message = "A valid 17-digit studentBirthRegistrationId is required." });
     }
 
     await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -520,6 +520,8 @@ static bool FixedTimeEqualsText(string providedValue, string configuredValue)
 }
 
 record CreateClassRequest(string? Name, int TotalSeats);
+
+record CreateHoldRequest(string? StudentBirthRegistrationId);
 
 record AdminLoginRequest(string? Email, string? Password);
 

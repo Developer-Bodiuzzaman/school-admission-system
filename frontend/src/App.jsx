@@ -200,8 +200,8 @@ export default function App() {
     }
 
     try {
-      await axios.post(`${API_BASE}/classes/${classId}/holds`, {}, {
-        headers: { 'X-Student-Id': studentId }
+      await axios.post(`${API_BASE}/classes/${classId}/holds`, {
+        studentBirthRegistrationId: studentId
       });
       setSuccess('Seat held successfully. Confirm your admission before the hold expires.');
       fetchClasses();
